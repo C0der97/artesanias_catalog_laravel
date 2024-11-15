@@ -13,6 +13,10 @@ return new class extends Migration
     {
         Schema::create('materials', function (Blueprint $table) {
             $table->id();
+            $table->string('name', 100);
+            $table->text('description')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->string('properties')->nullable();
             $table->timestamps();
         });
     }

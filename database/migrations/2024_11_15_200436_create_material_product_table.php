@@ -11,13 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('municipalities', function (Blueprint $table) {
+        Schema::create('material_product', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 100);
-            $table->text('description')->nullable();
-            $table->foreignId('department_id')
-                  ->constrained('departments')
-                  ->onDelete('cascade');
+            $table->foreignId('material_id')->constrained()->onDelete('cascade');
+            $table->foreignId('product_id')->constrained()->onDelete('cascade');
+            $table->integer('quantity')->nullable(); // Opcional: cantidad del material usado en el producto
             $table->timestamps();
         });
     }
@@ -27,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('municipalities');
+        Schema::dropIfExists('material_product');
     }
 };

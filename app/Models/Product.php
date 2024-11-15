@@ -12,6 +12,7 @@ class Product extends Model
     protected $fillable = [
         'name', 'description', 'category_id', 'artisan_id',
         'price', 'dimensions', 'weight', 'featured',
+        'image_url',
         'status', 'slug'
     ];
 
@@ -30,10 +31,13 @@ class Product extends Model
         return $this->belongsTo(Artisan::class);
     }
 
-    public function materials(): BelongsToMany
+    public function materials()
     {
-        return $this->belongsToMany(Material::class);
+        return $this->belongsToMany(Material::class, 'material_product')
+            ->withPivot('quantity') // Incluye la columna extra en la tabla pivote
+            ->withTimestamps(); // Incluye marcas de tiempo de la tabla pivote
     }
+    
 
     public function images() // Ahora HasMany está correctamente tipado
     {

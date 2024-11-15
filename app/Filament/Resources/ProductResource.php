@@ -45,7 +45,10 @@ class ProductResource extends Resource
                                 Textarea::make('description')
                                     ->label('Descripción')
                                     ->maxLength(500),
-                                    
+                                    Select::make('materials')
+                                    ->relationship('materials', 'name')
+                                    ->multiple()
+                                    ->label('Materiales utilizados'),
                                 Select::make('category_id')
                                     ->relationship('category', 'name')
                                     ->label('Categoría')
@@ -82,49 +85,12 @@ class ProductResource extends Resource
                                     ->maxLength(255),
                             ])->columnSpan(1),
 
-                            Section::make('Imágenes del Producto')
-                            ->schema([
-                                FileUpload::make('images')
-                                ->label('Imágenes')
-                                ->multiple()
-                                ->image()
-                                ->directory('products')
-                                ->visibility('public')
-                                ->reorderable()
-                                ->appendFiles()
-                                ->maxFiles(5)
-                                ->helperText('Sube hasta 5 imágenes. La primera será la principal.')
-                                ->columnSpanFull()
-                                ->afterStateUpdated(function ($set, $state, $context) use ($form) {
-                                    // Solo ejecuta esto al crear un producto (no en el contexto de edición)
-                                    if ($context === 'create' && $state && is_array($state)) {
-                                        // Obtener el producto desde el formulario
-                                        $product = $form->getRecord();
-                            
-                                        // Verificar si el producto es válido antes de continuar
-                                        if ($product && !$product->exists) {
-                                            // Guarda el producto primero (esto asegura que el producto tenga un ID)
-                                            $product->save();  // Guarda el producto en la base de datos para obtener el ID
-                                        }
-                            
-                                        // Ahora que tenemos un ID del producto, insertamos las imágenes
-                                        if ($product && $product->exists) {
-                                            $imagePaths = collect($state)->map(function ($path, $index) use ($product) {
-                                                return [
-                                                    'product_id' => $product->id,  // Asocia las imágenes con el ID del producto
-                                                    'image_path' => $path,
-                                                    'is_primary' => $index === 0, // La primera imagen será la principal
-                                                    'created_at' => now(),
-                                                    'updated_at' => now(),
-                                                ];
-                                            })->toArray();
-                            
-                                            // Inserta las imágenes en la base de datos
-                                            $product->images()->insert($imagePaths);
-                                        }
-                                    }
-                                })                                                    
-                            ])->columnSpan(1),
+                            TextInput::make('image_url')
+                            ->required()
+                            ->label('Image URL')
+                            ->url()
+                            ->placeholder('https://example.com/image.jpg'),
+             
                     ]),
             ]);
     }
@@ -133,11 +99,8 @@ class ProductResource extends Resource
     {
         return $table
             ->columns([
-                ImageColumn::make('productImages.image_path')
-                    ->label('Imagen')
-                    ->circular()
-                    ->stacked()
-                    ->limit(3),
+                TextColumn::make('image_url')->label('Image URL'),
+                ImageColumn::make('image_url')->label('Product Image'),
 
                 TextColumn::make('name')
                     ->label('Nombre')
@@ -159,6 +122,19 @@ class ProductResource extends Resource
                 TextColumn::make('featured')
                     ->label('Destacado')
                     ->sortable(),
+    
+                    TextColumn::make('materials.name')
+                    ->label('Materiales utilizados')
+                    ->formatStateUsing(function ($state) {
+                        if ($state instanceof \Illuminate\Support\Collection) {
+                            return $state->pluck('name')->join(', ');
+                        }
+                
+                        return $state ? implode(', ', (array) $state) : 'N/A';
+                    }),
+                
+
+
             ])
             ->filters([
                 SelectFilter::make('category')
